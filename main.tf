@@ -35,57 +35,20 @@ module "blog_vpc" {
   }
 }
 
-resource "aws_instance" "blog" {
-  ami           = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
 
-  vpc_security_group_ids = [module.blog_sg.security_group_id]
+module "autoscaling" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "8.0.0"
   
-  subnet_id = module.blog_vpc.public_subnets[0]
+  name = "blog"
+  min_size = 1
+  max_size = 2
 
-  tags = {
-    Name = "Learning Terraform"
-  }
-}
+  vpc_zone_identifier = module.blog_vpc.public_subnets
+  security_groups     = [module.blog_sg.security_group_id]
 
-module "alb" {
-  source = "terraform-aws-modules/alb/aws"
-
-  name    = "blog-alb"
-
-  vpc_id          = module.blog_vpc.vpc_id
-  subnets         = module.blog_vpc.public_subnets
-  security_groups = [module.blog_sg.security_group_id]
-
-  # Security Group
-  security_group_ingress_rules = {
-    all_http = {
-      from_port   = 80
-      to_port     = 80
-      ip_protocol = "tcp"
-      description = "HTTP web traffic"
-      cidr_ipv4   = "0.0.0.0/0"
-    }
-  }
-  }
-
-  access_logs = {
-    bucket = "my-alb-logs"
-  }
-
-  target_groups = {
-    ex-instance = {
-      name_prefix      = "blog"
-      protocol         = "HTTP"
-      port             = 80
-      target_type      = "instance"
-      target_id        = aws_instance.blog.id
-    }
-  }
-
-  tags = {
-    Environment = "Dev"
-  }
+  image_id      = data.aws_ami.app_ami.id
+  instance_type = var.instance_type
 }
 
 module "blog_sg" {
