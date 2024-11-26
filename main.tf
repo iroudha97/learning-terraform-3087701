@@ -85,14 +85,6 @@ module "alb" {
     bucket = "my-alb-logs"
   }
 
-  http_tcp_listeners = [
-    {
-      port               = 80
-      protocol           = "HTTP"
-      target_group_index = 0
-    }
-  ]
-
   target_groups = {
     ex-instance = {
       name_prefix      = "blog"
